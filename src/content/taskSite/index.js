@@ -19,6 +19,13 @@
       return { tasks, balance: scanner.readBalance(cfg) };
     },
     readBalance: ({ cfg }) => scanner.readBalance(cfg),
+    // Для страницы настроек: что расширение видит на странице (ничего не нажимает).
+    diagnose: ({ cfg }) => ({
+      url: location.href,
+      bySelectors: NS.dom.queryAll(cfg.selectors.taskCard).filter(NS.dom.isVisible).length,
+      tasks: scanner.listTasks(cfg),
+      balance: scanner.readBalance(cfg)
+    }),
     openTarget: (p) => checker.openTarget(p),
     getOpenedUrl: () => checker.getOpenedUrl(),
     checkTask: (p) => checker.checkTask(p),

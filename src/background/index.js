@@ -4,6 +4,9 @@ import * as runner from './runner.js';
 import * as store from './state.js';
 import { PHASE } from './phases.js';
 import { toastTab } from './notify.js';
+import { getConfig } from './config.js';
+import { sendCommand } from './tabs.js';
+import { classifyTask } from './taskTypes.js';
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (!msg?.type) return false;
@@ -18,6 +21,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       case 'resetStats':
         await runner.resetStats();
         return { ok: true };
+      case 'diagnose': {
+        const cfg = msg.cfg || (await getConfig());
+        const result = await sendCommand(msg.tabId, 'taskSite', 'diagnose', { cfg }, { timeout: 15000 });
+        result.tasks = result.tasks.map((t) => ({ ...t, typeLabel: classifyTask(t, cfg)?.typeLabel || null }));
+        return { ok: true, result };
+      }
       case 'getState':
         return { ok: true, state: await store.get() };
       default:

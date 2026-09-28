@@ -2,7 +2,10 @@
 // проверка видимости и «человеческий» клик. Файлы content-скриптов внедряются
 // программно как обычные скрипты, поэтому общаются через globalThis.AutoLike.
 (() => {
-  const NS = (globalThis.AutoLike = globalThis.AutoLike || {});
+  // После обновления/перезагрузки расширения в открытой вкладке могут остаться
+  // скрипты старой версии — их пространство имён сбрасываем, чтобы подключились новые.
+  if (globalThis.AutoLike && globalThis.AutoLike.__runtime !== chrome.runtime) globalThis.AutoLike = undefined;
+  const NS = (globalThis.AutoLike = globalThis.AutoLike || { __runtime: chrome.runtime });
   if (NS.dom) return;
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

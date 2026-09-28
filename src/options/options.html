@@ -2,40 +2,54 @@
 <html lang="ru">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AutoLike — настройки</title>
-    <style>
-      :root { --bg: #fff; --fg: #1d2330; --muted: #6b7385; --border: #dfe3ea; --accent: #fe2c55; }
-      @media (prefers-color-scheme: dark) { :root { --bg: #161a22; --fg: #e8ebf1; --muted: #97a0b3; --border: #2c3342; } }
-      body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 system-ui, sans-serif; }
-      main { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
-      h1 { font-size: 20px; margin: 0 0 4px; }
-      p { color: var(--muted); margin: 0 0 16px; }
-      textarea {
-        width: 100%; box-sizing: border-box; min-height: 60vh; padding: 12px; border: 1px solid var(--border);
-        border-radius: 8px; background: transparent; color: inherit; font: 12px/1.5 ui-monospace, Menlo, monospace;
-      }
-      .bar { display: flex; gap: 8px; margin-top: 12px; align-items: center; flex-wrap: wrap; }
-      button { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: inherit; cursor: pointer; }
-      button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
-      #msg { color: var(--muted); }
-      #msg.err { color: #d64545; }
-      code { font-size: 12px; }
-    </style>
+    <link rel="stylesheet" href="options.css" />
   </head>
   <body>
     <main>
-      <h1>AutoLike — настройки</h1>
-      <p>
-        Конфигурация в JSON: селекторы сайта с заданиями, шаблоны текста результата проверки, селекторы TikTok,
-        таймауты и количество попыток. Шаблоны задаются строками вида <code>"/regex/flags"</code>.
-      </p>
-      <textarea id="json" spellcheck="false"></textarea>
-      <div class="bar">
-        <button id="save" class="primary">Сохранить</button>
-        <button id="reset">Сбросить к значениям по умолчанию</button>
-        <span id="msg"></span>
-      </div>
+      <header class="top">
+        <div>
+          <h1>AutoLike — настройки</h1>
+          <p class="lead">
+            Изменённые параметры отмечены точкой. Кнопка ↺ возвращает значение по умолчанию.
+            Изменения применяются со следующего шага, перезапускать расширение не нужно.
+          </p>
+        </div>
+        <label class="adv-toggle"><input type="checkbox" id="showAdvanced" /> Показать расширенные</label>
+      </header>
+
+      <nav id="toc" class="toc"></nav>
+      <form id="form" novalidate></form>
+
+      <section class="card" id="diagnose">
+        <h2>Проверить на странице</h2>
+        <p class="desc">
+          Откройте сайт с заданиями в другой вкладке, выберите её и нажмите «Проверить». Расширение покажет, какие задания,
+          кнопки и баланс оно видит с текущими (даже несохранёнными) настройками. Ничего не нажимается.
+        </p>
+        <div class="row">
+          <select id="diagTab"></select>
+          <button type="button" id="diagRefresh" class="ghost" title="Обновить список вкладок">↻</button>
+          <button type="button" id="diagRun">Проверить</button>
+        </div>
+        <div id="diagOut" class="diag"></div>
+      </section>
+
+      <details class="card json">
+        <summary>JSON-конфиг (для опытных)</summary>
+        <p class="desc">Те же настройки одним текстом: можно скопировать их себе или вставить готовые и нажать «Применить JSON».</p>
+        <textarea id="json" spellcheck="false"></textarea>
+        <div class="row"><button type="button" id="applyJson" class="ghost">Применить JSON к форме</button></div>
+      </details>
     </main>
+
+    <footer class="bar">
+      <span id="msg"></span>
+      <button type="button" id="resetAll" class="ghost">Сбросить всё</button>
+      <button type="button" id="save">Сохранить</button>
+    </footer>
+
     <script type="module" src="options.js"></script>
   </body>
 </html>

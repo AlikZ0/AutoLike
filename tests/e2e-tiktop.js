@@ -125,7 +125,8 @@ const PROFILE_PAGE = (user) => `<!doctype html><html><head><meta charset=utf-8><
   await ctl.goto(`chrome-extension://${extId}/src/options/options.html`);
   // Имитируем конфиг, сохранённый старой версией целиком (проверка миграции).
   await ctl.evaluate(async () => {
-    const legacy = JSON.parse(document.getElementById('json').value || '{}');
+    const { DEFAULT_CONFIG } = await import('../background/config.js');
+    const legacy = structuredClone(DEFAULT_CONFIG);
     legacy.selectors.checkButton.selectors = ['.old-selector'];
     legacy.delays = { betweenSteps: [200, 400], afterAction: [500, 800], betweenTasks: [300, 500], balancePoll: 700, emptyScanReload: 1000 };
     legacy.timeouts = { ...legacy.timeouts, checkResult: 8000, balanceUpdate: 5000, element: 8000, newTab: 4000, tiktokElement: 8000 };
