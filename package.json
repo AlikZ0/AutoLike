@@ -4,7 +4,7 @@
   "private": true,
   "description": "Chrome Extension для автоматического выполнения заданий (TikTok Like / Follow / просмотр)",
   "scripts": {
-    "test:e2e": "node tests/e2e.js"
+    "test:e2e": "node tests/e2e.js && node tests/e2e-tiktop.js"
   },
   "devDependencies": {
     "playwright": "^1.56.1"

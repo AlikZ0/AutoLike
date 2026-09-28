@@ -1,4 +1,4 @@
-import { getConfig, saveConfigOverrides, resetConfig } from '../background/config.js';
+import { getConfig, saveConfigOverrides, resetConfig, diffFromDefaults } from '../background/config.js';
 
 const area = document.getElementById('json');
 const msg = document.getElementById('msg');
@@ -25,8 +25,10 @@ document.getElementById('save').addEventListener('click', async () => {
     say('maxAttempts должен быть целым числом от 1 до 10', true);
     return;
   }
-  await saveConfigOverrides(parsed);
-  say('Сохранено. Изменения применятся со следующего шага.');
+  const diff = diffFromDefaults(parsed) || {};
+  await saveConfigOverrides(diff);
+  const changed = Object.keys(diff).length;
+  say(changed ? 'Сохранено (только изменённые параметры). Применится со следующего шага.' : 'Совпадает со значениями по умолчанию.');
 });
 
 document.getElementById('reset').addEventListener('click', async () => {

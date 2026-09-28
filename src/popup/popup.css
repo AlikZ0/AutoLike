@@ -59,6 +59,7 @@ li .time { color: var(--muted); margin-right: 6px; font-variant-numeric: tabular
 li.success { color: var(--ok); }
 li.error { color: var(--bad); }
 li.retry { color: #d98a0b; }
+li.debug { color: var(--muted); }
 footer { display: flex; justify-content: space-between; margin-top: 12px; }
 button.link { background: none; border: 0; color: var(--muted); cursor: pointer; padding: 0; font-size: 12px; }
 button.link:hover { color: var(--fg); }

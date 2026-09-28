@@ -76,7 +76,10 @@
     return m ? m[0] : null;
   }
 
-  function findIdAttr(card) {
+  function findIdAttr(card, cfg) {
+    // Скрытое поле формы с id задания (например, UserPerformTask[id]) — самый надёжный вариант.
+    const input = dom.queryAll(cfg.selectors.taskIdInput || [], card).find((i) => i.value);
+    if (input) return input.value;
     for (const attr of ID_ATTRS) {
       const v = card.getAttribute(attr);
       if (v) return v;
@@ -91,7 +94,7 @@
     const text = dom.textOf(card).slice(0, 400);
     const url = findTargetUrl(card, cfg);
     const username = (url && (url.match(/tiktok\.com\/@([^/?#]+)/i) || [])[1]) || (text.match(USERNAME_RE) || [])[1] || null;
-    const idAttr = findIdAttr(card);
+    const idAttr = findIdAttr(card, cfg);
     // Идентификатор должен быть стабильным, чтобы после возврата на сайт
     // (и после перезагрузки) найти то же самое задание.
     const baseId = idAttr

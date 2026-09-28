@@ -13,13 +13,27 @@ export async function performOnTikTok(ctx) {
   await sleep(randomDelay(cfg.delays.betweenSteps));
   await ctx.assertActive();
 
-  const results = await sendCommand(
-    tiktokTabId,
-    'tiktok',
-    'perform',
-    { actions: task.actions, cfg, label: task.typeLabel },
-    { timeout: cfg.timeouts.command }
-  );
+  // Вкладка может ещё идти по редиректам (m.tiktok.com → www.tiktok.com) или
+  // перезагрузиться — тогда подключение к странице повторяем.
+  let results;
+  for (let i = 1; ; i++) {
+    try {
+      results = await sendCommand(
+        tiktokTabId,
+        'tiktok',
+        'perform',
+        { actions: task.actions, cfg, label: task.typeLabel },
+        { timeout: cfg.timeouts.command }
+      );
+      break;
+    } catch (e) {
+      const transient = e.code === 'no_receiver' || /error page|cannot access|frame/i.test(e.message || '');
+      if (!transient || i >= 3) throw e;
+      await sleep(2000 * i);
+      await ctx.assertActive();
+      await waitForTabComplete(tiktokTabId, cfg.timeouts.pageLoad);
+    }
+  }
 
   // Даём TikTok время отправить запрос на сервер, а сайту — «засчитать» визит.
   await ctx.sleep(cfg.delays.afterAction);

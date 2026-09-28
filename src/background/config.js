@@ -20,19 +20,23 @@ export const DEFAULT_CONFIG = {
       '.order-item',
       '.job-item'
     ],
-    // Ссылка на цель задания внутри карточки.
-    targetLink: ['a[href*="tiktok.com"]'],
+    // Скрытое поле с id задания внутри карточки (tiktop-free: UserPerformTask[id]).
+    taskIdInput: ['input[type="hidden"][name$="[id]"]', 'input[type="hidden"][name="task_id"]'],
+    // Ссылка на цель задания внутри карточки. Первая найденная — основная
+    // (tiktop-free: «Через браузер» даёт обычную ссылку www.tiktok.com).
+    targetLink: ['a.btn--complete2[href*="tiktok.com"]', 'a[href*="tiktok.com"]'],
     // Кнопки: сначала ищем по селекторам, затем по тексту среди clickableCandidates.
     checkButton: {
-      selectors: ['[data-action="check"]', '.btn-check', '.check-btn', '.js-check'],
+      selectors: ['button[value="check"]', '.btn--check', '[data-action="check"]', '.btn-check', '.check-btn', '.js-check'],
       text: '/^\\s*(проверить|check|verify)/i'
     },
     openButton: {
-      selectors: ['[data-action="open"]', '[data-action="start"]', '.btn-open', '.open-btn', '.js-open'],
+      // tiktop-free: «Через браузер» (прямая ссылка www.tiktok.com), затем «Выполнить» (мобильная m.tiktok.com).
+      selectors: ['a.btn--complete2[href*="tiktok.com"]', 'a.btn--complete[href*="tiktok.com"]', '[data-action="open"]', '[data-action="start"]', '.btn-open', '.open-btn', '.js-open'],
       text: '/(выполнить|перейти|открыть|начать|\\bgo\\b|\\bopen\\b|\\bstart\\b)/i'
     },
     skipButton: {
-      selectors: ['[data-action="skip"]', '[data-action="hide"]', '.btn-skip', '.skip-btn'],
+      selectors: ['button[value="hide"]', '[data-action="skip"]', '[data-action="hide"]', '.btn-skip', '.skip-btn'],
       text: '/(пропустить|скрыть|отказаться|\\bskip\\b|\\bhide\\b)/i'
     },
     // Кнопка подтверждения в диалоге (например, «Вы уверены, что хотите пропустить?»).
@@ -40,14 +44,19 @@ export const DEFAULT_CONFIG = {
       selectors: ['.swal2-confirm'],
       text: '/^\\s*(да|ok|ок|yes|подтвердить|confirm)\\s*$/i'
     },
-    dialogs: ['[role="dialog"]', '.modal.show', '.modal', '.swal2-popup', '[class*="modal" i]', '[class*="dialog" i]'],
+    dialogs: ['[role="dialog"]', '.modal.open', '.modal.show', '.modal', '.swal2-popup', '[class*="modal" i]', '[class*="dialog" i]'],
+    // Кнопки закрытия окна с результатом проверки (чтобы оно не мешало следующей попытке).
+    dialogClose: ['.modal.open .modal-close', '.modal.show .close', '.modal.show [data-dismiss="modal"]', '.swal2-confirm'],
     clickableCandidates:
       'button, a, [role="button"], input[type="button"], input[type="submit"], .btn, [class*="btn"], [class*="button"]',
     // Баланс пользователя.
-    balance: ['[data-balance]', '#balance', '.balance', '.user-balance', '[class*="balance" i]', '[id*="balance" i]'],
+    balance: ['.user-balance', '[data-balance]', '#balance', '.balance', '[class*="balance" i]', '[id*="balance" i]'],
     balanceLabel: '/(баланс|balance|счёт|счет)/i',
     // Контейнеры всплывающих сообщений сайта, где может появиться результат проверки.
     notifications: [
+      '#toast-container',
+      '.modal.open',
+      '[id*="message" i]',
       '[role="alert"]',
       '[role="status"]',
       '.toast',
@@ -66,7 +75,7 @@ export const DEFAULT_CONFIG = {
   // иначе «не выполнено» совпало бы с «выполнено».
   patterns: {
     failure:
-      '/(не\\s*выполн|не\\s*найден|не\\s*подтвержд|не\\s*засчитан|не\\s*обнаружен|ошибка|попробуйте|повторите|not\\s*(completed|found|confirmed|done|detected)|\\bfail|\\berror\\b|try again)/i',
+      '/(не\\s*выполн|не\\s*найден|не\\s*постав|не\\s*подпис|вы\\s*не\\s|не\\s*удалось|отсутству|не\\s*подтвержд|не\\s*засчитан|не\\s*обнаружен|ошибка|попробуйте|повторите|not\\s*(completed|found|confirmed|done|detected)|\\bfail|\\berror\\b|try again)/i',
     success:
       '/(выполнено|засчитано|успешно|начислен|подтверждено|награда|\\bsuccess|\\bcompleted\\b|\\bdone\\b|\\bapproved\\b|\\breward)/i'
   },
@@ -148,13 +157,45 @@ export function deepMerge(base, override) {
   return out;
 }
 
+const CONFIG_VERSION = 2;
+
+// Версия 1 сохраняла конфиг целиком, и старые селекторы перекрывали новые значения
+// по умолчанию. При миграции оставляем только реальные отличия, а selectors/patterns
+// берём из новых значений по умолчанию.
+function migrate(overrides) {
+  if (!overrides || overrides._v === CONFIG_VERSION) return overrides;
+  const { selectors, patterns, _v, ...rest } = overrides;
+  return { ...(diffFromDefaults(rest) || {}), _v: CONFIG_VERSION };
+}
+
 export async function getConfig() {
-  const { [CONFIG_KEY]: overrides } = await chrome.storage.local.get(CONFIG_KEY);
-  return deepMerge(DEFAULT_CONFIG, overrides || {});
+  const { [CONFIG_KEY]: stored } = await chrome.storage.local.get(CONFIG_KEY);
+  const overrides = migrate(stored);
+  if (overrides !== stored) await chrome.storage.local.set({ [CONFIG_KEY]: overrides });
+  const { _v, ...clean } = overrides || {};
+  return deepMerge(DEFAULT_CONFIG, clean);
+}
+
+// Разница между конфигом и значениями по умолчанию — сохраняем только её,
+// чтобы обновления расширения (новые селекторы по умолчанию) применялись автоматически.
+export function diffFromDefaults(value, base = DEFAULT_CONFIG) {
+  if (isPlainObject(value) && isPlainObject(base)) {
+    const out = {};
+    for (const [key, v] of Object.entries(value)) {
+      if (!(key in base)) {
+        out[key] = v;
+        continue;
+      }
+      const d = diffFromDefaults(v, base[key]);
+      if (d !== undefined) out[key] = d;
+    }
+    return Object.keys(out).length ? out : undefined;
+  }
+  return JSON.stringify(value) === JSON.stringify(base) ? undefined : value;
 }
 
 export async function saveConfigOverrides(overrides) {
-  await chrome.storage.local.set({ [CONFIG_KEY]: overrides });
+  await chrome.storage.local.set({ [CONFIG_KEY]: { ...overrides, _v: CONFIG_VERSION } });
 }
 
 export async function resetConfig() {
