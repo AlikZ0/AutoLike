@@ -103,6 +103,9 @@
     el.dispatchEvent(new MouseEvent('mouseover', opts));
     el.dispatchEvent(new PointerEvent('pointerdown', { ...opts, pointerType: 'mouse', isPrimary: true }));
     el.dispatchEvent(new MouseEvent('mousedown', opts));
+    // Настоящий клик ставит фокус. Формы с несколькими submit-кнопками
+    // (например «Проверить» / «Скрыть») часто определяют нажатую кнопку по document.activeElement.
+    if (typeof el.focus === 'function') el.focus({ preventScroll: true });
     await jitter(40, 120);
     el.dispatchEvent(new PointerEvent('pointerup', { ...opts, pointerType: 'mouse', isPrimary: true }));
     el.dispatchEvent(new MouseEvent('mouseup', opts));

@@ -24,9 +24,14 @@
   function createResultWatcher(taskId, cfg, card) {
     const success = dom.toRegex(cfg.patterns.success);
     const failure = dom.toRegex(cfg.patterns.failure);
-    const before = new Set([...segments(card), ...dom.queryAll(cfg.selectors.notifications).flatMap(segments)]);
+    const notifsBefore = dom.queryAll(cfg.selectors.notifications);
+    const before = new Set([...segments(card), ...notifsBefore.flatMap(segments)]);
+    // Окна, которые были скрыты до клика: если такое окно откроется, его текст считаем новым целиком
+    // (сайт может показать тот же текст, что и в прошлой попытке).
+    const hiddenBefore = new Set(notifsBefore.filter((n) => !dom.isVisible(n)));
     const added = [];
     let current = card;
+    let lastSeen = '';
 
     root.removeAttribute('data-autolike-alert');
     const observer = new MutationObserver((mutations) => {
@@ -56,13 +61,16 @@
         const fresh = [];
         if (current.isConnected) fresh.push(...segments(current).filter((t) => !before.has(t)));
         for (const n of dom.queryAll(cfg.selectors.notifications)) {
-          if (dom.isVisible(n)) fresh.push(...segments(n).filter((t) => !before.has(t)));
+          if (!dom.isVisible(n)) continue;
+          const segs = segments(n);
+          fresh.push(...(hiddenBefore.has(n) ? segs : segs.filter((t) => !before.has(t))));
         }
         const alertText = root.getAttribute('data-autolike-alert');
         if (alertText) fresh.push(alertText);
         fresh.push(...added.slice(-50).filter((t) => !before.has(t)));
 
         const joined = fresh.join(' | ');
+        lastSeen = joined;
         if (failure && failure.test(joined)) return { status: 'fail', message: excerpt(joined, failure) };
         if (success && success.test(joined)) return { status: 'success', message: excerpt(joined, success) };
         if (!current.isConnected) return { status: 'removed', message: 'Задание исчезло со страницы после проверки' };
@@ -70,11 +78,13 @@
       },
       stop() {
         observer.disconnect();
-      }
+      },
+      lastSeen: () => lastSeen.slice(0, 300)
     };
   }
 
   async function openTarget({ taskId, cfg }) {
+    await closeDialogs(cfg);
     const card = await dom.waitFor(() => scanner.findCard(taskId, cfg), { timeout: cfg.timeouts.element });
     if (!card) throw dom.fail('task_not_found');
     root.removeAttribute('data-autolike-opened');
@@ -98,6 +108,7 @@
   }
 
   async function checkTask({ taskId, cfg }) {
+    await closeDialogs(cfg);
     let card = await dom.waitFor(() => scanner.findCard(taskId, cfg), { timeout: cfg.timeouts.element });
     const balanceBefore = scanner.readBalance(cfg);
     if (!card) return { status: 'missing', message: 'Задание не найдено на странице', balanceBefore };
@@ -113,12 +124,26 @@
     if (!btn) throw dom.fail('check_button_not_found');
 
     const watcher = createResultWatcher(taskId, cfg, card);
+    const buttonText = dom.labelOf(btn).slice(0, 40);
     try {
       await dom.humanClick(btn);
       const result = await dom.waitFor(() => watcher.evaluate(), { timeout: cfg.timeouts.checkResult, interval: 400 });
-      return { ...(result || { status: 'unknown', message: 'Сайт не показал результат проверки' }), balanceBefore };
+      // Даём окну/уведомлению дорисоваться, затем закрываем его, чтобы не мешало следующей попытке.
+      await dom.sleep(600);
+      await closeDialogs(cfg);
+      return {
+        ...(result || { status: 'unknown', message: 'Сайт не показал результат проверки' }),
+        balanceBefore,
+        debug: { buttonText, siteText: watcher.lastSeen() }
+      };
     } finally {
       watcher.stop();
+    }
+  }
+
+  async function closeDialogs(cfg) {
+    for (const btn of dom.queryAll(cfg.selectors.dialogClose || []).filter(dom.isVisible)) {
+      await dom.humanClick(btn).catch(() => {});
     }
   }
 

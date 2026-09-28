@@ -101,7 +101,15 @@ async function phaseCheck(ctx) {
   await notify.toast(ctx, `Проверяем выполнение… Попытка ${attempt} из ${maxAttempts}`, 'info');
 
   const result = await verification.clickCheck(ctx);
-  if (result.balanceBefore != null) await ctx.patch({ balance: result.balanceBefore });
+  // Диагностика: что именно ответил сайт (видно в журнале popup).
+  await ctx.update((s) => ({
+    balance: result.balanceBefore ?? s.balance,
+    log: store.appendLog(
+      s,
+      `Проверка [${result.status}] кнопка «${result.debug?.buttonText || '?'}», ответ сайта: ${result.debug?.siteText || result.message || '—'}`,
+      'debug'
+    )
+  }));
 
   const passed = result.status === 'success' || result.status === 'removed';
   const missingButPaid = result.status === 'missing' && ctx.s.balanceAtStart != null;

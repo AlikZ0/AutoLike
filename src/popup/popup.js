@@ -117,6 +117,23 @@ $('reset').addEventListener('click', async () => {
   refresh();
 });
 
+$('copyLog').addEventListener('click', async () => {
+  const { state } = await send('getState');
+  const lines = [
+    `status: ${state.status}`,
+    `phase: ${state.phase}, attempt: ${state.attempt}/${state.maxAttempts}, balance: ${state.balance}`,
+    `task: ${JSON.stringify(state.currentTask)}`,
+    `lastError: ${state.lastError}`,
+    '--- log ---',
+    ...state.log.map((e) => `${time(e.t)} [${e.kind}] ${e.text}`),
+    '--- failed ---',
+    ...state.failedTasks.map((f) => `${time(f.t)} ${f.label} ${f.url || ''}: ${f.reason}`)
+  ];
+  await navigator.clipboard.writeText(lines.join('\n'));
+  $('copyLog').textContent = 'Скопировано ✓';
+  setTimeout(() => ($('copyLog').textContent = 'Копировать журнал'), 1500);
+});
+
 $('options').addEventListener('click', () => chrome.runtime.openOptionsPage());
 
 chrome.storage.onChanged.addListener((changes, area) => {
