@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title>AutoLike</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <div class="title">AutoLike</div>
+      <span id="runBadge" class="badge">Остановлено</span>
+    </header>
+
+    <button id="toggle" class="primary">Start</button>
+    <div id="error" class="error" hidden></div>
+
+    <section class="card">
+      <div class="label">Статус</div>
+      <div id="status" class="status">—</div>
+      <div class="row">
+        <span class="label">Попытка</span>
+        <span id="attempt" class="mono">—</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="label">Текущее задание</div>
+      <div id="task" class="task">—</div>
+    </section>
+
+    <section class="stats">
+      <div class="stat ok"><div id="success" class="num">0</div><div class="label">Выполнено</div></div>
+      <div class="stat bad"><div id="failed" class="num">0</div><div class="label">Не удалось</div></div>
+      <div class="stat"><div id="balance" class="num">—</div><div class="label">Баланс</div></div>
+    </section>
+
+    <details id="failedBox">
+      <summary>Не выполненные задания (<span id="failedCount">0</span>)</summary>
+      <ul id="failedList"></ul>
+    </details>
+
+    <details>
+      <summary>Журнал</summary>
+      <ul id="log"></ul>
+    </details>
+
+    <footer>
+      <button id="reset" class="link">Сбросить статистику</button>
+      <button id="options" class="link">Настройки</button>
+    </footer>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

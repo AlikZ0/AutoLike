@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "AutoLike — автовыполнение заданий",
+  "version": "1.0.0",
+  "description": "Автоматически выполняет задания (Like / Follow / просмотр TikTok) на сайте с заданиями и нажимает «Проверить».",
+  "permissions": ["storage", "tabs", "scripting", "alarms"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "src/background/index.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "AutoLike",
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "options_page": "src/options/options.html"
+}
