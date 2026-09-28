@@ -109,7 +109,8 @@
       text,
       index,
       hasCheckButton: !!findButton(card, cfg.selectors.checkButton, cfg),
-      hasOpenButton: !!findButton(card, cfg.selectors.openButton, cfg)
+      hasOpenButton: !!findButton(card, cfg.selectors.openButton, cfg),
+      hasSkipButton: !!findButton(card, cfg.selectors.skipButton, cfg)
     };
   }
 
